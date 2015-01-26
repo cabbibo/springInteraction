@@ -56,7 +56,7 @@
 
     <script>
 
-      var VR = false;
+      var VR = true;
 
       var scene , camera , renderer , controls;
       var frame, controller, handL , handR;
@@ -143,13 +143,15 @@
 
         //scene.add( new THREE.Mesh( new THREE.IcosahedronGeometry( 10 , 1 ) , new THREE.MeshNormalMaterial({side:THREE.DoubleSide})));
 
-        for( var i = 0; i < 300; i++ ){
+        for( var i = 0; i < 60; i++ ){
 
           var position = new THREE.Vector3();
           position.x = ( Math.random() - .5 ) * 1;
           position.y = ( Math.random() - .5 ) * 1
           position.z = ( Math.random() - .5 ) * 1
 
+          position.normalize();
+          position.multiplyScalar( .3 );
           var index = Math.floor( Math.random()* WordArray.length);
           var string = WordArray[ index ];
           var interactable = new Interactable( position , string ); 

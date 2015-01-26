@@ -3,7 +3,8 @@ function Interactable( position , name){
   this.innerRadius = .01;
   this.outerRadius = .02;
 
-  this.cutoffSpeed = .4;
+  this.cutoffSpeed = .6;
+  this.cutoffMatch = .9;
 
   var geo = G.geometries.icosahedron1;
   var mat = G.materials.normal.clone();
@@ -157,7 +158,7 @@ Interactable.prototype.checkSelection = function( position , velocity ){
 
     var match = tv2.dot( tv1 );
 
-    if( match > .6 && speed > this.cutoffSpeed ){
+    if( match > this.cutoffMatch && speed > this.cutoffSpeed ){
 
       this._select();
 
@@ -188,7 +189,7 @@ Interactable.prototype.checkDeselection = function( position , velocity ){
 
     var match = tv2.dot( tv1 );
 
-    if( match < -.6 && speed > this.cutoffSpeed  ){
+    if( match < -this.cutoffMatch && speed > this.cutoffSpeed  ){
 
       this._deselect();
 
