@@ -1,4 +1,4 @@
-function Interactable( position ){
+function Interactable( position , name){
 
   this.innerRadius = .01;
   this.outerRadius = .02;
@@ -47,6 +47,14 @@ function Interactable( position ){
   scene.add( this.line );
   scene.add( this.body );
 
+  this.title = textCreator.createMesh( name );
+  this.title.scale.multiplyScalar( .1 );
+  this.title.position.y = 0.;
+  this.title.position.x = this.title.scaledWidth *2.5;
+  this.title.material.opacity = .2;
+  this.title.material.depthWrite = false;
+  this.title.material.needsUpdate = true;
+  this.body.add( this.title );
   
 
 }
@@ -62,6 +70,7 @@ Interactable.prototype.update = function( position , velocity ){
   tv1.sub( this.position );
   var dist = tv1.length();
 
+  this.body.lookAt( camera.position );
   //console.log( tv );
   //console.log( 3 - dist );
   
@@ -198,6 +207,8 @@ Interactable.prototype._select = function(){
   this.selected = true;
   selectedInteractables.push( this );
 
+  this.select();
+  
 }
 
 Interactable.prototype._deselect = function(){
@@ -210,21 +221,35 @@ Interactable.prototype._deselect = function(){
   var index = selectedInteractables.indexOf( this );
   
   if( index > -1 ){ selectedInteractables.splice(index, 1); }
+
+  this._hoverOut();
+  this.deselect();
+
   
 }
 
 Interactable.prototype._hoverOver = function(){
 
   console.log('hoverOver');
+  this.title.material.opacity = 1;
   this.body.material.opacity = 1;
   this.hovered = true;
+
+  this.hoverOver();
+  
 
 }
 
 Interactable.prototype._hoverOut = function(){
 
-  this.body.material.opacity = .5;
+  if( this.selected === false ){
+    this.title.material.opacity = .5;
+    this.body.material.opacity = .5;
+  }
+ 
   this.hovered = false;
+  
+  this.hoverOut();
 
 }
 

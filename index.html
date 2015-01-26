@@ -45,12 +45,14 @@
     <script src = "lib/VRControls.js"             ></script>
 
     <script src = "lib/ShaderLoader.js"           ></script>
+    <script src = "lib/TextCreator.js"            ></script>
 
 
     <script src = "RaycastControls.js"            ></script>
     <script src = "HandUpdateFunctions.js"        ></script>
     <script src = "Interactable.js"               ></script>
 
+    <script src = "WordArray.js"                  ></script>
 
     <script>
 
@@ -147,8 +149,10 @@
           position.x = ( Math.random() - .5 ) * 1;
           position.y = ( Math.random() - .5 ) * 1
           position.z = ( Math.random() - .5 ) * 1
-          
-          var interactable = new Interactable( position ); 
+
+          var index = Math.floor( Math.random()* WordArray.length);
+          var string = WordArray[ index ];
+          var interactable = new Interactable( position , string ); 
 
           interactables.push( interactable );
         }
@@ -204,7 +208,7 @@
 
         for( var i = 0; i < selectedInteractables.length; i++ ){
 
-          tv1.set( i * .004 , 0 , 0 );
+          tv1.set( 0 , -(i+1) * .004 , 0 );
           tv1.applyQuaternion( camera.quaternion );
           selectedInteractables[i].position.add( tv1 );
 
