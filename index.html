@@ -1,0 +1,280 @@
+<html>
+
+  <head>
+    <style>
+      body{ 
+        margin: 0px; 
+        font-family:"GeoSans";
+        color:#fff;
+      }
+
+      @font-face {
+        font-family: "GeoSans";
+        src: url("assests/GeosansLight.ttf");
+      }
+
+      #loadText{
+
+        position:absolute;
+
+      }
+
+      /*#renderer{
+
+        position: absolute;
+        top:0px;
+        left:0px;
+
+      }*/
+
+    </style>
+  </head>
+
+  <body>
+
+    <script src = "lib/three.min.js"              ></script>
+    <script src = "lib/jquery.min.js"             ></script>
+    <script src = "lib/leap.min.js"               ></script>
+    <script src = "lib/TrackballControls.js"      ></script>
+    <script src = "lib/TextCreator.js"            ></script>
+    <script src = "lib/AudioController.js"        ></script>
+    <script src = "lib/AudioTexture.js"           ></script>
+    <script src = "lib/Tween.js"                  ></script>
+
+    <script src = "lib/VREffect.js"               ></script>
+    <script src = "lib/VRControls.js"             ></script>
+
+    <script src = "lib/ShaderLoader.js"           ></script>
+
+
+    <script src = "RaycastControls.js"            ></script>
+    <script src = "HandUpdateFunctions.js"        ></script>
+    <script src = "Interactable.js"               ></script>
+
+
+    <script>
+
+      var VR = false;
+
+      var scene , camera , renderer , controls;
+      var frame, controller, handL , handR;
+
+
+      var textCreator;
+      var interactables = [];
+      var selectedInteractables = [];
+
+
+      var audioController = new AudioController();
+      //audioController.mute.gain.value = 0;
+
+      
+      
+      
+      var tween = TWEEN;
+
+      TWEEN.origTween = TWEEN.Tween;
+      TWEEN.Tween = function (options){
+        var res = new TWEEN.origTween(options);
+        res.easing(TWEEN.Easing.Quadratic.InOut);
+        return res;
+      };
+
+      var tv1 = new THREE.Vector3();
+      var tv2 = new THREE.Vector3();
+
+
+      var loaded = 0;
+      var neededToLoad = 1;
+      
+      var shaders = new ShaderLoader( 'shaders' , 'shaderChunks'   );
+
+      shaders.shaderSetLoaded = function(){
+        onLoad(); 
+      }
+
+      shaders.load( 'vs-rainbow' , 'rainbow' , 'vertex' );
+      shaders.load( 'fs-rainbow' , 'rainbow' , 'fragment' );
+
+      G = {};
+
+      G.geometries = {
+
+        icosahedron1: new THREE.IcosahedronGeometry( 1 , 1 ),
+
+      }
+
+
+      G.materials = {
+
+        wireframe:    new THREE.MeshBasicMaterial({ wireframe: true }),
+        normal:       new THREE.MeshNormalMaterial(),
+
+        hoverMat:     new THREE.MeshBasicMaterial({ color: 0xaa77ff }),
+        selectedMat:  new THREE.MeshBasicMaterial({ color: 0xffaa77 }),
+        neutralMat:   new THREE.MeshBasicMaterial({ color: 0x999999 , wireframe: true }),
+        selectedMat:  new THREE.MeshBasicMaterial({ color: 0xffffff }),
+        playingMat:   new THREE.MeshBasicMaterial({ color: 0x77ff99 })
+
+      }
+
+      function init(){
+
+        textCreator = new TextCreator( 40 );
+
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        camera = new THREE.PerspectiveCamera( 75 , w/h , .01 , 1000 );
+        camera.position.z = 0.1;
+
+        scene = new THREE.Scene();
+
+        
+        controller = new Leap.Controller();
+        controller.connect();
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.autoClear = false;
+
+        //renderer.domElement.id = "renderer"
+
+        //scene.add( new THREE.Mesh( new THREE.IcosahedronGeometry( 10 , 1 ) , new THREE.MeshNormalMaterial({side:THREE.DoubleSide})));
+
+        for( var i = 0; i < 300; i++ ){
+
+          var position = new THREE.Vector3();
+          position.x = ( Math.random() - .5 ) * 1;
+          position.y = ( Math.random() - .5 ) * 1
+          position.z = ( Math.random() - .5 ) * 1
+          
+          var interactable = new Interactable( position ); 
+
+          interactables.push( interactable );
+        }
+
+
+        document.body.appendChild( renderer.domElement );
+
+        window.addEventListener( 'resize', onWindowResize , false );
+		document.body.addEventListener( 'dblclick', onDoubleClick , false );
+
+        //document.body.addEventListener("keydown", onKeyDown, true);
+
+        
+        // VR
+        if( VR == true ){
+
+          controls = new THREE.VRControls( camera );
+
+          effect = new THREE.VREffect( renderer );
+          effect.setSize( window.innerWidth, window.innerHeight );
+
+          controller.setOptimizeHMD(true);
+          
+        }else{
+     
+          controls = new THREE.TrackballControls( camera );
+
+          renderer.setSize( window.innerWidth, window.innerHeight );
+
+        }
+
+
+        // Put in HandUpdateFunctions.js for cleanliness of index
+        initHands();
+
+      }
+
+      function animate(){
+
+        requestAnimationFrame( animate );
+        controls.update();
+        updateHands();
+
+        tween.update();
+
+        var position = handR.fingers[9].position;
+        var velocity = handR.fingers[9].velocity;
+        for( var i = 0; i < interactables.length; i++ ){
+
+          interactables[i].update( position , velocity );
+
+        }
+
+        for( var i = 0; i < selectedInteractables.length; i++ ){
+
+          tv1.set( i * .004 , 0 , 0 );
+          tv1.applyQuaternion( camera.quaternion );
+          selectedInteractables[i].position.add( tv1 );
+
+        }
+
+
+        if( handL.active ) controlsLeft.update();
+        if( handR.active ) controlsRight.update();
+        
+        audioController.update();
+
+        if( VR == true ){
+          effect.render( scene, camera );
+        }else{
+          renderer.render( scene , camera );
+        }
+
+      }
+
+
+        // Resets the renderer to be the proper size
+      function onWindowResize(){
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        if( VR == true ){
+          effect.setSize( window.innerWidth , window.innerHeight );
+        }else{
+          renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+        
+
+      }
+
+
+      function onLoad(){
+
+        loaded ++;
+        if( loaded == neededToLoad ){
+
+          init();
+          animate();
+
+        }
+
+        if( loaded > neededToLoad ){
+          console.log('MASSIVE PROBABLS' );
+        }
+
+      }
+
+      /*
+      Listen for keyboard event and zero positional sensor on appropriate keypress.
+      */
+	  function onKeyDown(event) {
+	    event.preventDefault();
+
+	    if (event.keyCode == 90) { // z
+	    	controls.zeroSensor();
+	    }
+	  };
+
+      function onDoubleClick() {
+        effect.setFullScreen( true );
+	    controls.zeroSensor();
+        
+      }
+
+    </script>
+
+  </body>
+</html>
