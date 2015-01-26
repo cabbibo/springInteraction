@@ -25,9 +25,10 @@ function Interactable( position , name){
 
   this.body.add( this.shell );
 
-  this.position = this.body.position;
-
+  this.position = new THREE.Vector3();
+  
   this.position.copy( position );
+  this.body.position.copy( this.position );
 
   // Keeping it so we have the info in
   // terms of camera coordinates
@@ -124,14 +125,16 @@ Interactable.prototype.checkHover = function( position ){
   // If we are within the proper radius
   if( dist < this.outerRadius ){
 
-    if( !this.hovered ){
-      this._hoverOver();
+    if( !this.selected ){
+      //this._hoverOver();
+      this._select();
     }
 
   }else{
 
-    if( this.hovered ){
-      this._hoverOut();
+    if( this.selected ){
+      //this._hoverOut();
+      this._deselect();
     }
 
   }
@@ -266,11 +269,12 @@ Interactable.prototype._updateSelected = function( position , velocity ){
 
   tv1.copy( position );
   tv1.sub( this.position );
-  tv1.multiplyScalar( .1 );
+  tv1.multiplyScalar( .5 );
 
   this.position.add( tv1 );
 
 
+  this.body.position.copy( this.position );
  // tv1.copy( velocity );
  // tv1.multiplyScalar( -1 );
  // this.position.add( tv1 );
